@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <title>iPod Classic Retro UI</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 0;
+            overflow-x: hidden;
+        }
+        .ipod {
+            width: 360px;
+            height: 580px;
+            background: #e6e6e6;
+            border-radius: 30px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            border: 4px solid #d1d1d6;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+            }
+            .ipod {
+                width: 100%;
+                max-width: 380px;
+                height: calc(100vh - 20px);
+                max-height: 660px;
+                border-radius: 24px;
+                padding: 18px;
+            }
+        }
+
+        .screen {
+            width: 100%;
+            height: 200px;
+            background: #fff;
+            border: 3px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            flex-shrink: 0;
+            z-index: 2;
+        }
+        .status-bar {
+            height: 22px;
+            background: linear-gradient(#f0f0f0, #dcdcdc);
+            border-bottom: 1px solid #b5b5b5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+        }
+        .battery {
+            width: 20px;
+            height: 10px;
+            border: 1px solid #333;
+            position: relative;
+            background: #4cd964;
+        }
+        .battery::after {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: 2px;
+            width: 2px;
+            height: 4px;
+            background: #333;
+        }
+        .screen-content {
+            flex: 1;
+            position: relative;
+        }
+        .view {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+        }
+        .view.active {
+            display: flex;
+        }
+        .menu-title {
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 15px;
+            background: linear-gradient(#e0e0e0, #c5c5c5);
+            border-bottom: 1px solid #b5b5b5;
+        }
+        .menu-list {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .menu-item {
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-item.selected {
+            background: linear-gradient(#54a0ff, #0052cc);
+            color: #fff;
+        }
+        .menu-item::after {
+            content: '>';
+            opacity: 0.5;
+        }
+        .now-playing {
+            padding: 20px 15px;
+            text-align: center;
+            justify-content: space-between;
+        }
+        .track-title {
+            font-weight: bold;
+            font-size: 17px;
+            color: #111;
+            margin-top: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track-artist {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .progress-container {
+            width: 100%;
+            background: #e0e0e0;
+            height: 12px;
+            border-radius: 6px;
+            border: 1px solid #b5b5b5;
+            overflow: hidden;
+            margin-top: auto;
+        }
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(#54a0ff, #0052cc);
+        }
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #555;
+            margin-top: 4px;
+        }
+        .click-wheel {
+            width: 230px;
+            height: 230px;
+            background: #f2f2f2;
+            border-radius: 50%;
+            margin-top: auto;
+            margin-bottom: 10px;
+            border: 2px solid #d1d1d6;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.1), 0 8px 20px rgba(0,0,0,0.15);
+            position: relative;
+            cursor: pointer;
+            flex-shrink: 0;
+            touch-action: none;
+            z-index: 2;
+        }
+        .wheel-btn {
+            position: absolute;
+            font-weight: bold;
+            font-size: 13px;
+            color: #8e8e93;
+            text-transform: uppercase;
+            z-index: 5;
+            padding: 15px;
+            pointer-events: auto;
+        }
+        .btn-menu { top: 5px; left: 50%; transform: translateX(-50%); }
+        .btn-next { right: 10px; top: 50%; transform: translateY(-50%); }
+        .btn-prev { left: 10px; top: 50%; transform: translateY(-50%); }
+        .btn-play { bottom: 5px; left: 50%; transform: translateX(-50%); }
+        .center-button {
+            width: 80px;
+            height: 80px;
+            background: #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid #d1d1d6;
+            z-index: 10;
+            pointer-events: auto;
+        }
+        .center-button:active {
+            background: #dcdcdc;
+        }
+        #file-input, #sticker-input {
+            display: none;
+        }
+
+        /* Redigeringspanelen ligger nu över hela iPoden när den öppnas */
+        .editor-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            color: #fff;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            font-size: 13px;
+            overflow-y: auto;
+            border-radius: 26px;
+        }
+        .editor-panel h3 {
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .color-picker-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .color-picker-row label {
+            font-size: 13px;
+        }
+        .color-picker-row input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 38px;
+            height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: transparent;
+        }
+        .color-picker-row input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        .color-picker-row input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #fff;
+            border-radius: 6px;
+        }
+        .editor-panel button {
+            padding: 10px;
+            border: none;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .btn-save {
+            background: #0052cc;
+        }
+        .btn-sticker {
+            background: #34c759;
+        }
+        .btn-reset {
+            background: #ff3b30;
+        }
+
+        /* Sticker styling */
+        .ipod-sticker {
+            position: absolute;
+            width: 65px;
+            height: 65px;
+            object-fit: contain;
+            cursor: default;
+            z-index: 3;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            touch-action: none;
+            pointer-events: none;
+        }
+        
+        body.editing .ipod-sticker {
+            pointer-events: auto;
+            cursor: grab;
+            z-index: 1001; /* Ligger över redigeringspanelen när man drar */
+        }
+        body.editing .ipod-sticker:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <div class="ipod" id="ipod-body">
+        <div class="screen">
+            <div class="status-bar">
+                <span>iPod</span>
+                <span id="play-status">■</span>
+                <div class="battery"></div>
+            </div>
+            <div class="screen-content">
+                <div id="view-menu" class="view active">
+                    <div class="menu-title">iPod</div>
+                    <ul class="menu-list" id="menu-list">
+                        <li class="menu-item selected" data-action="now-playing">Nu spelas</li>
+                        <li class="menu-item" data-action="upload">Ladda upp låtar (.mp3)</li>
+                    </ul>
+                </div>
+                <div id="view-playing" class="view now-playing">
+                    <div class="track-title" id="ui-title">Ingen låt laddad</div>
+                    <div class="track-artist" id="ui-artist">Välj Ladda upp i menyn</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="ui-progress"></div>
+                    </div>
+                    <div class="time-info">
+                        <span id="ui-current-time">0:00</span>
+                        <span id="ui-duration">0:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="editor-panel" id="editor">
+            <h3>Skinn-designer</h3>
+            
+            <div class="color-picker-row">
+                <label for="cfg-body">iPod-skal:</label>
+                <input type="color" id="cfg-body" value="#e6e6e6">
+            </div>
+            <div class="color-picker-row">
+                <label for="cfg-wheel">Klickhjul:</label>
+                <input type="color" id="cfg-wheel" value="#f2f2f2">
+            </div>
+            <div class="color-picker-row">
+                <label for="cfg-center">Mittknapp:</label>
+                <input type="color" id="cfg-center" value="#ffffff">
+            </div>
+
+            <button class="btn-sticker" id="btn-add-sticker">+ Ladda upp sticker (foto)</button>
+            <button class="btn-save" id="btn-save-skin">Spara design</button>
+            <button class="btn-reset" id="btn-reset-all">Återställ allt</button>
+        </div>
+
+        <div class="click-wheel" id="wheel">
+            <div class="wheel-btn btn-menu" id="btn-menu">Menu</div>
+            <div class="wheel-btn btn-next" id="btn-next">▶▶</div>
+            <div class="wheel-btn btn-prev" id="btn-prev">◀◀</div>
+            <div class="wheel-btn btn-play" id="btn-play">▶||</div>
+            <div class="center-button" id="btn-center"></div>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept="audio/mp3" multiple>
+    <input type="file" id="sticker-input" accept="image/*">
+    <audio id="audio-player"></audio>
+
+    <script>
+        let currentView = 'menu', menuIndex = 0, playlist = [], currentTrackIndex = 0, menuTimer = null;
+        let stickers = [];
+        const fileInput = document.getElementById('file-input');
+        const stickerInput = document.getElementById('sticker-input');
+        const audioPlayer = document.getElementById('audio-player');
+        const viewMenu = document.getElementById('view-menu');
+        const viewPlaying = document.getElementById('view-playing');
+        const menuList = document.getElementById('menu-list');
+        const uiTitle = document.getElementById('ui-title');
+        const uiArtist = document.getElementById('ui-artist');
+        const uiProgress = document.getElementById('ui-progress');
+        const uiCurrentTime = document.getElementById('ui-current-time');
+        const uiDuration = document.getElementById('ui-duration');
+        const playStatus = document.getElementById('play-status');
+        const ipodBody = document.getElementById('ipod-body');
+        const wheel = document.getElementById('wheel');
+        const btnCenter = document.getElementById('btn-center');
+        const editor = document.getElementById('editor');
+
+        const DEFAULT_SKIN = {
+            body: '#e6e6e6',
+            wheel: '#f2f2f2',
+            center: '#ffffff'
+        };
+
+        function vibrate(ms) { if (navigator.vibrate) { navigator.vibrate(ms); } }
+
+        function toggleEditor(show) {
+            if (show) {
+                editor.style.display = 'flex';
+                document.body.classList.add('editing');
+            } else {
+                editor.style.display = 'none';
+                document.body.classList.remove('editing');
+            }
+        }
+
+        function saveSkin() {
+            const skin = {
+                body: document.getElementById('cfg-body').value,
+                wheel: document.getElementById('cfg-wheel').value,
+                center: document.getElementById('cfg-center').value
+            };
+            localStorage.setItem('ipod_skin', JSON.stringify(skin));
+            saveStickersToStorage();
+            applySkin(skin);
+            toggleEditor(false);
+        }
+
+        function applySkin(skin) {
+            if (!skin) return;
+            ipodBody.style.background = skin.body;
+            wheel.style.background = skin.wheel;
+            btnCenter.style.background = skin.center;
+            document.getElementById('cfg-body').value = skin.body;
+            document.getElementById('cfg-wheel').value = skin.wheel;
+            document.getElementById('cfg-center').value = skin.center;
+        }
+
+        function resetAll() {
+            if (confirm("Är du säker på att du vill återställ allt? Alla skins, stickers och låtar kommer raderas.")) {
+                localStorage.clear();
+                playlist = [];
+                stickers = [];
+                
+                document.querySelectorAll('.ipod-sticker').forEach(el => el.remove());
+                
+                audioPlayer.pause();
+                audioPlayer.src = '';
+                playStatus.textContent = '■';
+                uiTitle.textContent = 'Ingen låt laddad';
+                uiArtist.textContent = 'Välj Ladda upp i menyn';
+                uiProgress.style.width = '0%';
+                uiCurrentTime.textContent = '0:00';
+                uiDuration.textContent = '0:00';
+                
+                applySkin(DEFAULT_SKIN);
+                rebuildMenu();
+                switchView('menu');
+                toggleEditor(false);
+                vibrate(40);
+            }
+        }
+
+        /* --- Sticker-funktionalitet --- */
+        document.getElementById('btn-add-sticker').addEventListener('click', () => {
+            stickerInput.click();
+        });
+
+        stickerInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const stickerData = {
+                    id: 'sticker_' + Date.now(),
+                    src: event.target.result,
+                    x: 30,
+                    y: 30
+                };
+                stickers.push(stickerData);
+                renderSticker(stickerData);
+                saveStickersToStorage();
+            };
+            reader.readAsDataURL(file);
+            stickerInput.value = '';
+        });
+
+        function renderSticker(data) {
+            const img = document.createElement('img');
+            img.src = data.src;
+            img.className = 'ipod-sticker';
+            img.id = data.id;
+            img.style.left = data.x + 'px';
+            img.style.top = data.y + 'px';
+
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            function onStart(e) {
+                if (!document.body.classList.contains('editing')) return;
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                initialLeft = img.offsetLeft;
+                initialTop = img.offsetTop;
+                img.style.zIndex = 1002;
+            }
+
+            function onMove(e) {
+                if (!isDragging || !document.body.classList.contains('editing')) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const deltaX = clientX - startX;
+                const deltaY = clientY - startY;
+
+                let newLeft = initialLeft + deltaX;
+                let newTop = initialTop + deltaY;
+
+                newLeft = Math.max(0, Math.min(newLeft, ipodBody.clientWidth - 65));
+                newTop = Math.max(0, Math.min(newTop, ipodBody.clientHeight - 65));
+
+                img.style.left = newLeft + 'px';
+                img.style.top = newTop + 'px';
+
+                data.x = newLeft;
+                data.y = newTop;
+            }
+
+            function onEnd() {
+                if (isDragging) {
+                    isDragging = false;
+                    img.style.zIndex = 1001;
+                    saveStickersToStorage();
+                }
+            }
+
+            img.addEventListener('mousedown', onStart);
+            img.addEventListener('touchstart', onStart, { passive: true });
+
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('touchmove', onMove, { passive: true });
+
+            window.addEventListener('mouseup', onEnd);
+            window.addEventListener('touchend', onEnd);
+
+            img.addEventListener('dblclick', () => {
+                if (!document.body.classList.contains('editing')) return;
+                img.remove();
+                stickers = stickers.filter(s => s.id !== data.id);
+                saveStickersToStorage();
+                vibrate(20);
+            });
+
+            ipodBody.appendChild(img);
+        }
+
+        function saveStickersToStorage() {
+            localStorage.setItem('ipod_stickers', JSON.stringify(stickers));
+        }
+
+        function loadStickersFromStorage() {
+            const stored = localStorage.getItem('ipod_stickers');
+            if (stored) {
+                try {
+                    stickers = JSON.parse(stored) || [];
+                    stickers.forEach(renderSticker);
+                } catch (e) {
+                    stickers = [];
+                }
+            }
+        }
+
+        function savePlaylistToStorage() { localStorage.setItem('ipod_playlist', JSON.stringify(playlist)); }
+        
+        function loadPlaylistFromStorage() {
+            const stored = localStorage.getItem('ipod_playlist');
+            if (stored) {
+                try {
+                    playlist = JSON.parse(stored) || [];
+                    rebuildMenu();
+                } catch (e) {
+                    playlist = [];
+                }
+            }
+            const storedSkin = localStorage.getItem('ipod_skin');
+            if (storedSkin) {
+                try {
+                    applySkin(JSON.parse(storedSkin));
+                } catch (e) {
+                    applySkin(DEFAULT_SKIN);
+                }
+            } else {
+                applySkin(DEFAULT_SKIN);
+            }
+            loadStickersFromStorage();
+        }
+
+        function rebuildMenu() {
+            menuList.innerHTML = `<li class="menu-item" data-action="now-playing">Nu spelas</li><li class="menu-item" data-action="upload">Ladda upp låtar (.mp3)</li>`;
+            playlist.forEach((track, index) => {
+                const li = document.createElement('li');
+                li.className = 'menu-item';
+                li.setAttribute('data-action', 'play-track');
+                li.setAttribute('data-index', index);
+                li.textContent = track.name;
+                menuList.appendChild(li);
+            });
+            updateMenuVisuals();
+        }
+
+        function updateMenuVisuals() {
+            const items = menuList.querySelectorAll('.menu-item');
+            items.forEach((item, idx) => {
+                if (idx === menuIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        /* --- Rotationsnavigering --- */
+        let lastAngle = null;
+        let accumulatedAngle = 0;
+        const angleThreshold = 55;
+
+        function getAngle(clientX, clientY) {
+            const rect = wheel.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const x = clientX - centerX;
+            const y = clientY - centerY;
+            return Math.atan2(y, x) * (180 / Math.PI);
+        }
+
+        function handleWheelMove(clientX, clientY) {
+            if (currentView !== 'menu') return;
+            const items = menuList.querySelectorAll('.menu-item');
+            if (items.length === 0) return;
+
+            const currentAngle = getAngle(clientX, clientY);
+
+            if (lastAngle !== null) {
+                let delta = currentAngle - lastAngle;
+                if (delta > 180) delta -= 360;
+                if (delta < -180) delta += 360;
+
+                accumulatedAngle += delta;
+
+                if (Math.abs(accumulatedAngle) >= angleThreshold) {
+                    if (accumulatedAngle > 0) {
+                        menuIndex = (menuIndex + 1) % items.length;
+                    } else {
+                        menuIndex = (menuIndex - 1 + items.length) % items.length;
+                    }
+                    vibrate(10);
+                    updateMenuVisuals();
+                    accumulatedAngle = 0;
+                }
+            }
+            lastAngle = currentAngle;
+        }
+
+        function handleWheelEnd() {
+            lastAngle = null;
+            accumulatedAngle = 0;
+        }
+
+        wheel.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('wheel-btn') || e.target.id === 'btn-center') return;
+            lastAngle = getAngle(e.touches[0].clientX, e.touches[0].clientY);
+            accumulatedAngle = 0;
+        }, { passive: true });
+
+        wheel.addEventListener('touchmove', (e) => {
+            if (e.target.classList.contains('wheel-btn') || e.target.id === 'btn-center') return;
+            handleWheelMove(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: true });
+
+        wheel.addEventListener('touchend', handleWheelEnd);
+
+        let isMouseDown = false;
+        wheel.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('wheel-btn') || e.target.id === 'btn-center') return;
+            isMouseDown = true;
+            lastAngle = getAngle(e.clientX, e.clientY);
+            accumulatedAngle = 0;
+        });
+
+        window.addEventListener('mousemove', (e) => { if (isMouseDown) handleWheelMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => { isMouseDown = false; handleWheelEnd(); });
+
+        function loadTrack(index) {
+            if (playlist.length === 0) return;
+            currentTrackIndex = index;
+            const track = playlist[currentTrackIndex];
+            audioPlayer.src = track.url;
+            uiTitle.textContent = track.name;
+            uiArtist.textContent = 'Spår ' + (currentTrackIndex + 1) + ' av ' + playlist.length;
+            audioPlayer.play().catch(() => { playStatus.textContent = '❚❚'; });
+            playStatus.textContent = '▶';
+        }
+
+        document.getElementById('btn-center').addEventListener('click', () => {
+            vibrate(25);
+            if (currentView === 'menu') {
+                const items = menuList.querySelectorAll('.menu-item');
+                const selectedItem = items[menuIndex];
+                const action = selectedItem.getAttribute('data-action');
+                if (action === 'now-playing') {
+                    switchView('playing');
+                } else if (action === 'upload') {
+                    fileInput.click();
+                } else if (action === 'play-track') {
+                    switchView('playing');
+                    loadTrack(parseInt(selectedItem.getAttribute('data-index')));
+                }
+            }
+        });
+
+        /* --- MENU-knapp: Håll i 3s för Skin-designer --- */
+        const menuBtn = document.getElementById('btn-menu');
+        let holdTriggered = false;
+
+        function startMenuHold() { 
+            holdTriggered = false;
+            menuTimer = setTimeout(() => { 
+                holdTriggered = true;
+                vibrate(50); 
+                toggleEditor(true); 
+            }, 3000); 
+        }
+
+        function clearMenuHold() { 
+            clearTimeout(menuTimer); 
+        }
+
+        menuBtn.addEventListener('mousedown', startMenuHold);
+        menuBtn.addEventListener('touchstart', startMenuHold, { passive: true });
+
+        menuBtn.addEventListener('mouseup', clearMenuHold);
+        menuBtn.addEventListener('mouseleave', clearMenuHold);
+        menuBtn.addEventListener('touchend', clearMenuHold);
+        
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            if (holdTriggered) {
+                holdTriggered = false;
+                return;
+            }
+
+            vibrate(20);
+            
+            if (editor.style.display === 'flex') { 
+                toggleEditor(false); 
+                return; 
+            }
+            
+            if (currentView === 'playing') switchView('menu');
+        });
+
+        document.getElementById('btn-next').addEventListener('click', () => { vibrate(20); if (playlist.length > 0) loadTrack((currentTrackIndex + 1) % playlist.length); });
+        document.getElementById('btn-prev').addEventListener('click', () => { vibrate(20); if (playlist.length > 0) loadTrack((currentTrackIndex - 1 + playlist.length) % playlist.length); });
+        document.getElementById('btn-play').addEventListener('click', () => { vibrate(20); if (audioPlayer.src) { if (audioPlayer.paused) { audioPlayer.play(); playStatus.textContent = '▶'; } else { audioPlayer.pause(); playStatus.textContent = '❚❚'; } } });
+        document.getElementById('btn-save-skin').addEventListener('click', saveSkin);
+        document.getElementById('btn-reset-all').addEventListener('click', resetAll);
+
+        function switchView(view) {
+            currentView = view;
+            if (view === 'menu') {
+                viewMenu.classList.add('active');
+                viewPlaying.classList.remove('active');
+            } else {
+                viewMenu.classList.remove('active');
+                viewPlaying.classList.add('active');
+            }
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            let loadedCount = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    playlist.push({ name: file.name.replace(/\.[^/.]+$/, ""), url: event.target.result });
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        savePlaylistToStorage(); rebuildMenu(); switchView('playing');
+                        loadTrack(playlist.length - files.length);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function formatTime(secs) { if (isNaN(secs)) return "0:00"; const m = Math.floor(secs / 60), s = Math.floor(secs % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
+        
+        audioPlayer.addEventListener('timeupdate', () => { if (audioPlayer.duration) { uiProgress.style.width = ((audioPlayer.currentTime / audioPlayer.duration) * 100) + '%'; uiCurrentTime.textContent = formatTime(audioPlayer.currentTime); uiDuration.textContent = formatTime(audioPlayer.duration); } });
+        audioPlayer.addEventListener('loadedmetadata', () => { uiDuration.textContent = formatTime(audioPlayer.duration); });
+        audioPlayer.addEventListener('ended', () => { if (playlist.length > 0 && currentTrackIndex < playlist.length - 1) { loadTrack(currentTrackIndex + 1); } else { playStatus.textContent = '■'; uiProgress.style.width = '0%'; uiCurrentTime.textContent = '0:00'; } });
+
+        window.addEventListener('DOMContentLoaded', loadPlaylistFromStorage);
+    </script>
+</body>
+</html>
